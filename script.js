@@ -15,33 +15,39 @@ const languages = {
     ja: "Japanese",
     zh: "Chinese",
 };
+
 for (const [code, name] of Object.entries(languages)) {
     fromLanguage.innerHTML += `<option value="${code}">${name}</option>`;
     toLanguage.innerHTML += `<option value="${code}">${name}</option>`;
 }
+
 toLanguage.value = "es"; // Default "to" language
 
-// Translate function
+// Debounce function to prevent rapid requests
+let timeout;
 inputText.addEventListener('input', () => {
     const text = inputText.value;
     const from = fromLanguage.value;
     const to = toLanguage.value;
 
     if (text.trim()) {
-        fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ q: text, source: from, target: to, format: "text" }),
-        })
-        .then((response) => response.json())
-        .then((data) => {
-            translatedText.textContent = data.translatedText;
-        })
-        .catch((err) => {
-            translatedText.textContent = "Translation error!";
-            console.error(err);
-        });
+        clearTimeout(timeout); // Clear previous timeout
+        timeout = setTimeout(() => {
+            fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ q: text, source: from, target: to, format: "text" }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                translatedText.textContent = data.translatedText;
+            })
+            .catch((err) => {
+                translatedText.textContent = "Error occurred! Please try again later.";
+                console.error(err);
+            });
+        }, 500); // Wait for 500ms before sending the request
     } else {
-        translatedText.textContent = "Translation will appear here...";
+        translatedText.textContent = "Your translation will appear here...";
     }
 });
